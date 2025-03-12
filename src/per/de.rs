@@ -8,15 +8,13 @@ use super::{
     THIRTY_TWO_K,
 };
 use crate::{
-    de::Error as _,
-    types::{
+    de::Error as _, error::DecodeErrorKind, types::{
         self,
         constraints::{self, Extensible},
         fields::{Field, Fields},
         strings::{should_be_indexed, StaticPermittedAlphabet},
         Constraints, Enumerated, IntegerType, SetOf, Tag,
-    },
-    Decode,
+    }, Decode
 };
 
 pub use crate::error::DecodeError;
@@ -695,7 +693,9 @@ impl<'input, const RFC: usize, const EFC: usize> crate::Decoder for Decoder<'inp
         _: Tag,
         _: Constraints,
     ) -> Result<R, Self::Error> {
-        Err(DecodeError::real_not_supported(self.codec()))
+        let octets = self.decode_octets()?.into_vec();
+        R::try_from_ieee754_bytes(octets.as_slice())
+            .map_err(|_| DecodeError::from_kind(DecodeErrorKind::InvalidRealEncoding, self.codec()))
     }
 
     fn decode_octet_string<'b, T: From<&'b [u8]> + From<Vec<u8>>>(

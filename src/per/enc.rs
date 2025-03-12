@@ -917,12 +917,14 @@ impl<const RFC: usize, const EFC: usize> crate::Encoder<'_> for Encoder<RFC, EFC
 
     fn encode_real<R: types::RealType>(
         &mut self,
-        _: Tag,
-        _: Constraints,
-        _: &R,
-        _: Identifier,
+        tag: Tag,
+        constraints: Constraints,
+        value: &R,
+        identifier: Identifier,
     ) -> Result<Self::Ok, Self::Error> {
-        Err(Error::real_not_supported(self.codec()))
+        let (bytes, _len) = value.to_ieee754_bytes();
+        self.encode_octet_string(tag, constraints, bytes.as_ref(), identifier)?;
+        Ok(())
     }
 
     fn encode_null(&mut self, _tag: Tag, _: Identifier) -> Result<Self::Ok, Self::Error> {
